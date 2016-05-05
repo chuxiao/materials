@@ -1,0 +1,204 @@
+第二章：VIM 的第一步
+
+2. 当前模式
+        显示当前模式：    :set showmode
+
+4. 删除字符
+        删除字符：    x
+        删除整行：    dd
+        删除换行符：  J
+
+5. 撤销和重做
+        撤销和重做：    u    CTRL-R
+        一次撤销对一行的全部操作及及撤销上一次的U操作：    U
+
+7. 退出
+        保存并退出     ZZ
+        放弃所有修改并载入原有内容     :e!
+
+第三章：移动
+
+1. 以WORD为单位的光标移动
+        以non-word字符区分单词边界：w    b    e    ge（iskeyword 选项）
+        以空白字符区分单词边界： W  B   E   gE
+
+2. 移动到行首和行尾
+        ^    $    5$    0
+
+3. 移动到指定字符
+        移动到下一字符：  fx  Fx   ;  ,
+        移动到下一字符的前一个位置：  tx   Tx   ;   ,
+
+4. 移动到括号
+        :set showmatch
+
+5. 移动到指定行
+        文件内移动到指定行：  gg   G   55G    90%
+        当前屏幕内的移动：   H   M   L
+
+6. 告诉你当前的位置
+        CTRL-G    :set number    :set ruler
+
+7. 滚屏
+        半屏滚动：CTRL-U   CTRL-D
+        一行滚动：CTRL-E   CTRL-Y
+        整屏滚动：CTRL-F   CTRL-B
+        设置当前在屏幕中的位置：  zz  zt  zb
+
+8. 查找
+        *    #   :set hlsearch    :set incsearch  :set nowrapscan
+
+10. 标记
+        ``   CTRL-I  CTRL-O   :jumps   ma    `a    `"
+
+第四章：小幅改动
+
+2. 改变文本
+        cw  c$   cc(改变整行，但保留行首空白)    x X  d  D=d$  c  C=c$   s  S=cc   r
+
+3. 重复改动
+        .
+
+4. Visual 模式
+        v   CTRL-V   o   O
+
+5. 移动文本
+        p   P   xp
+
+6. 复制文本
+        Y(复制整行)
+
+7. 使用粘贴板
+        "*yy   "*p   "+yy    "+p
+
+8. 文本对象
+        daw   cis   das  diw
+
+9. 替换模式
+        R
+
+10. 特殊命令
+        ~   I   A
+
+第七章：编辑多个文件
+
+1. 编辑另一个文件
+        会关闭当前正在编辑的文件并打开新文件    :edit file     :write   :edit! file   :hide edit file
+
+2. 文件列表
+        vim file1 file2 file3    :next  :next!    :wnext  :args   :prev    :wprev    :first    :last   :set autowrite
+
+3. 切换到另一文件
+        :next     CTRL-^    `"    `.     文件标签   GmB
+
+5. 寄存器
+        "f    "+    "*
+
+7. 更改文件名
+        :saveas file2     :file file2
+
+第八章：分隔窗口
+
+1. 分隔一个窗口
+        :split    CTRL-W w    :close   :only
+
+2. 为另外一个文件开启窗口
+        :split file     :new
+
+3. 窗口大小
+        :3split       3CTRL-W +      3CTRL-W -       3CTRL-W _    3CTRL-W <   3CTRL-W >   3CTRL-W |    CTRL-W =
+
+4. 垂直分隔
+        CTRL-W t    CTRL-W b
+
+5. 移动窗口
+        CTRL-W K
+
+6. 针对所有窗口操作的命令
+        :qall    :wall  :qall！    -o  -O
+
+9. 页签
+        :tabedit file      :tab split   gt    :tabonly
+
+第十章：大刀阔斧
+
+1. 命令的记录与回放
+        qa...q   @a   3@@    qC/workq     "AY
+
+2. 替换与范围
+
+4. 全局命令
+    [range]global/pattern/command
+
+5. Visual Block 模式
+    I    A     c     C     r     >    J
+
+6. 读写部分文件
+    read   write
+
+7. 格式化文本
+    gqap    gggqG
+
+8. 改变大小写
+    guw   g~~    gU
+
+9. 使用外部程序
+    !5Gsort     !!date
+
+第二十二章 查找文件
+
+1. 文件浏览器
+    c    d    D    o     v      p     P     t     R     cd    pwd     lcd
+
+4. 缓冲区列表
+    ls      b5    bn   bprev    bfirst    blast     bd5
+
+第二十四章 快速键入
+
+1. 纠错
+    CTRL-W    CTRL-U    CTRL->
+
+3. 自动补全
+    CTRL-P    CTRL-N     CTRL-X CTRL-_     CTRL-X CTRL-O
+
+4. 重复录入
+    CTRL-A     CTRL-@
+
+5. 从其他行复制
+    CTRL-Y    CTRL-E
+
+6. 插入一个寄存器中的内容
+    CTRL-R {register}
+
+7. 缩写
+    ia    uab   abclear    noreab
+
+第二十九章 之于程序
+
+1. 使用tags
+    使用tags: ctags *.c    :tag startlist=CTRL-](跳到函数定义处)    :tags(查看跳过的tags)    CTRL-T(返回上一个tag)    :tag(跳到最后一个tag)    :3tag    3CTRL-T
+    分隔窗口：:stag xxx   CTRL-W ]
+    多个tags文件：:set tags=./tags,./../tags,./*/tags    :set tags=~/proj/**/tags
+    同名tag: :tnext    :tselect    :tfirst    :tnext    :tprev    :tlast
+    tag名字查找：:tag write_    :tag /www
+
+2. 预览窗口
+    :ptag xxx    CTRL-W }   :pedit xxx    :psearch xxx
+
+3. 在程序中移动
+    宏IF...ELSE: %    [#     ]#
+    代码块移动：[[   ][     [{     ]{
+    方法定义：[m    ]m     []    ]]
+    括号内移动：[(      ])
+    注释内移动：[/   ]/
+
+4. 查找全局标识符
+    [I    :checkpath   3[<TAB>     [D
+
+5. 查找局部标识符
+    gD    gd
+
+第三十章 程序的编辑
+
+1. 缩进
+    ==     =a{    gg=G    (i)CTRL-D    CTRL-T   >i{    >a{

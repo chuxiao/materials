@@ -1,0 +1,28 @@
+1. 时区
+    查询时区
+        date -R
+
+    设置时区
+        cp /usr/share/zoneinfo/{$洲}/{$城市} /etc/localtime
+
+2. 时间
+    查询时间
+        date
+
+    按一定格式查看时间
+        date +%Y-%m-%d %H:%M:%S
+
+    查看UTC 时间
+        date -u
+
+    设置日期
+        date -s 2014-10-16
+
+    设置时间
+        date -s 22:05:00
+
+    将当前时间和日期写入BIOS，避免重启后失效
+        hwclock -w
+
+3. 与时间服务器同步
+    * * * * * /usr/sbin/ntpdate 210.72.145.44 > /dev/null 2>&1

@@ -1,0 +1,105 @@
+转换和删除字符
+
+用法：
+    tr [option]... SET1  [SET2]
+
+选项：
+    -d  删除SET1中出现的任意一个字符，不必须连续。
+
+    -s  将输入中出现在SET1中的连续字符替换成一个，如果存在SET2，则进行转换。
+
+备注：
+    转换时SET2的长度通常会被扩充至SET1的长度。
+
+使用案例：
+
+    1. $ echo thegeekstuff | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
+        THEGEEKSTUFF
+
+    2. echo thegeekstuff | tr [:lower:] [:upper:]
+        THEGEEKSTUFF
+
+    3. echo thegeekstuff | tr a-z A-Z
+        THEGEEKSTUFF
+
+    4. $ echo aaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb | tr -s [:lower:]
+        ab
+
+    5. $ echo aaaaaaaaaabbbbbbbbbbbbbbbbbbbbb | tr -s [ab] [BA]
+        BA
+
+    6. $ echo aaaaaaaaaabbbbbbbbbbbbbbbbbbbbb | tr [ab] [BA]
+        BBBBBBBBBBAAAAAAAAAAAAAAAAAAAAA
+
+    7. $ echo "hello world,root" | tr -d "a-h"
+        llo worl,root
+
+
+
+SETs are specified as strings of characters.  Most represent themselves.  Interpreted sequences are:
+
+   \NNN   character with octal value NNN (1 to 3 octal digits)
+
+   \\     backslash
+
+   \a     audible BEL
+
+   \b     backspace
+
+   \f     form feed
+
+   \n     new line
+
+   \r     return
+
+   \t     horizontal tab
+
+   \v     vertical tab
+
+   CHAR1-CHAR2
+                 all characters from CHAR1 to CHAR2 in ascending order
+
+   [CHAR*]
+                 in SET2, copies of CHAR until length of SET1
+
+   [CHAR*REPEAT]
+                 REPEAT copies of CHAR, REPEAT octal if starting with 0
+
+   [:alnum:]
+                 all letters and digits
+
+   [:alpha:]
+                 all letters
+
+   [:blank:]
+                 all horizontal whitespace
+
+   [:cntrl:]
+                 all control characters
+
+   [:digit:]
+                 all digits
+
+   [:graph:]
+                 all printable characters, not including space
+
+   [:lower:]
+                 all lower case letters
+
+   [:print:]
+                 all printable characters, including space
+
+   [:punct:]
+                 all punctuation characters
+
+   [:space:]
+                 all horizontal or vertical whitespace
+
+   [:upper:]
+                 all upper case letters
+
+   [:xdigit:]
+                 all hexadecimal digits
+
+   [=CHAR=]
+                 all characters which are equivalent to CHAR

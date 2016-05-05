@@ -1,0 +1,26 @@
+通用：
+    $ git config --global user.name yanzengyan
+    $ git config --global user.email yanzengyan99@gmail.com
+    $ git config --global alias.co checkout
+    $ git config --global alias.br branch
+    $ git config --global alias.ci commit
+    $ git config --global alias.st status
+    $ git config --global alias.unstage 'reset HEAD --'
+    $ git config --global alias.last 'log -1 HEAD'
+    $ git config --global core.quotepath false
+    $ git config --global alias.di diff
+    $ git config --global push.default simple
+
+Msysgit:
+    $git config --global gui.encoding utf-8
+    $git config --global i18n.commitencoding utf-8
+    $git config --global i18n.logoutputencoding utf-8
+
+    [etc/git-completion.bash]
+    + alias ls='ls --show-control-chars --color=auto'
+
+    [etc/profile]
+    + export LESSCHARSET=utf-8
+
+Linux:
+    在.bashrc中添加：source ~/.git-completion.bash。若想对所有用户生效，则复制到 /etc/bash_completion.d/ 目录中。

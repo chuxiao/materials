@@ -1,0 +1,40 @@
+GNU软件安装包的发布一般同时会附上一个asc/sig文件，这个文件一般会称为这个安装包的数字签名，大致原理是先计算安装包的信息摘要，然后对摘要进行签名。这个签名文件主要是用来验证安装包是完整的，没有被修改的。
+
+我们以Apahce-web server tarball为例进行说明，它包含两个文件：
+    httpd-2.0.55.tar.gz
+    httpd-2.0.55.tar.gz.asc
+首先我们要先下载这两个文件。
+
+1. 找到验证签名的钥匙号
+    $gpg httpd-2.0.55.tar.gz.asc
+
+    gpg: Signature made Monday 10 October 2005 07:05:15 AM IST using RSA key ID 10FDE075
+    gpg: Can't check signature: public key not found
+
+    输出表明公钥未找到，钥匙号为10FDE075。
+
+2. 从公钥服务器取得公钥
+    $gpg --keyserver pgpkeys.mit.edu --recv-key 10FDE075
+
+    gpg: requesting key 10FDE075 from hkp server pgpkeys.mit.edu
+    gpg: key 10FDE075: duplicated user ID detected - merged
+    gpg: key 10FDE075: public key "wrowe@covalent.net" imported
+    gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
+    gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+    gpg: Total number processed: 1
+    gpg:               imported: 1  (RSA: 1)
+
+    输出表明取得公钥。
+
+3. 验证安装包
+    $gpg httpd-2.0.55.tar.gz.asc
+
+    gpg: Signature made Wed 24 Apr 2013 04:04:10 AM CST using RSA key ID A11262CB
+    gpg: Good signature from "Gary David Gregory (Code signing key) <ggregory@apache.org>"
+    gpg: WARNING: This key is not certified with a trusted signature!
+    gpg:          There is no indication that the signature belongs to the owner.
+    Primary key fingerprint: 2DB4 F1EF 0FA7 61EC C4EA 935C 86FD C7E2 A112 62CB
+
+    输出表示验证成功，但要注意那个WARNING，表明这个公钥没有经过认证，无法表明它就属于真正的文件发布者。
+
+

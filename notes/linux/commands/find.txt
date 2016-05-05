@@ -1,0 +1,218 @@
+语法:
+    find [options] [PATH] [expression]
+
+用途:
+    目录查找.
+
+主要选项:
+    -P
+        从不跟随符号链接(默认选项).
+
+    -L
+        跟随符号链接.
+
+    -H
+        不跟随符号链接,除非符号链接为命令行参数.
+
+    如果同时指定-P,-L,-H中的几个,则最后出现的一个起作用.
+
+表达式:
+    选项
+        -depth
+            在处理当前目录前先处理其子目录(默认是先处理当前目录),-delete动作暗示此选项.
+
+        -maxdepth level
+            向下搜索的最大目录层数,-maxdepth 0表示仅测试命令行参数.
+
+        -mindepth level
+            向下搜索的最小目录层数.
+
+        -mount
+            不搜索其他文件系统.
+
+    测试条件
+        数字参数意义
+            +n    比n大
+            -n    比n小
+            n     等于n
+
+        -amin n
+            文件于n分钟前访问.
+
+        -cmin n
+            文件状态于n分钟前修改.
+
+        -mnin n
+            文件于n分钟前修改.
+
+        -atime n
+            文件于n天前访问.
+
+        -ctime n
+            文件状态于n天前修改.
+
+        -mtime n
+            文件于n天前修改.
+
+        -anewer file
+            访问时间比file较新的文件.
+
+        -cnewer file
+            文件状态改变时间比file新的文件.
+
+        -newer file
+            文件修改时间比file新的文件.
+
+        -empty
+            空目录或文件大小为0.
+
+        -executable
+            文件可执行或目录可搜索.
+
+        -false
+            总是false.
+
+        -gid gid
+            组ID.
+
+        -uid uid
+            用户ID.
+
+        -user name
+            name为user账号.
+
+        -group name
+            name为group名称.
+
+        -nouser
+            查找文件的拥有者不在/etc/passwd中的人的文件.
+
+        -nogroup
+            查找文件用户组不在/etc/group中的文件.
+
+        -name filename
+            查找文件名为filename的文件.
+
+        -iname filename
+            类似于-name,但不区分大小写.
+
+        -path pattern
+        -ipath pattern
+            路径名匹配shell模式.如find . -path './sr*sc'匹配'./src/mics'.
+
+        -size n[cwbkMG]
+            查找大小为n的文件.
+
+        -readable
+            文件可读.
+
+        -true
+            总是true.
+
+        -type TYPE
+            查找类型为TYPE的文件.TYPE: f 常规文件;b/c 设备文件;d 目录;l 链接文件;s 套接字;p FIFO.
+
+        -writable
+            文件可写.
+
+        -perm mode
+            查找文件属性刚好等于mode的文件.例如:-perm 4755 表示查找属性为-rwsr--r--的文件,-perm g=w只匹配文件mode为0200的文件.
+
+        -perm -mode
+            查找文件属性必须全部包括mode的文件.
+
+        -perm /mode
+            查找文件属性包括任一mode的文件.
+
+    动作
+        -delete
+            删除文件,成功返回true,否则返回一条错误消息.
+
+        -exec command {} \;
+            执行command,命令执行成功返回true.命令执行的目录为搜索的起始目录.
+
+        -exec command {} +
+            同上,但处理的不是单个搜索到的文件,而是每个搜索到的文件都被放到command后面.
+
+        -execdir command {} \;
+        -execdir command {} +
+            同上,但命令执行的目录为搜索到的文件所在的子目录.
+
+        -ok command {} \;
+        -okdir command {} \;
+            同-exec及-execdir,但执行之前需要先向用户确认.
+
+        -print
+            默认行为,在标准输出上打印完整的文件名,以换行符结束.如果文件名中可能包含有换行符,请使用-print0.
+
+        -print0
+            在标准输出上打印完整的文件名,以NULL字符结束.它可以正确处理文件名中包含换行符的情形.如果对搜索结果使用xargs,请使用-0选项.
+
+        -printf format
+            以指定格式在标准输出上打印文件名.
+
+        -fprint file
+        -fprint0 file
+        -fprintf file format
+            同标准输出上的打印,但输出到文件.
+
+        -ls
+        -fls file
+
+        -prune
+            不在子目录中进行搜索.
+
+    操作符
+        (expr)
+            利用括号改变优先顺序.
+
+        \! expr
+            取反.
+
+        expr1 expr2
+            AND操作,支持短路计算.
+
+        expr1 -o expr2
+            OR操作,支持短路计算.
+
+样例:
+    find /tmp -name core -type f -print |xargs rm -f
+    找到名为core的普通文件并删除.
+
+    find /tmp -name core -type f -print0 |xargs -0 rm -f
+    找到名为core的普通文件并删除.但支持文件名中含有换行符或单引号双引号.
+
+    find . -type f -exec file {} \;
+
+    find / \( -perm -4000 fprintf /root/suid.txt %#m %u %p\n \), \( -size +100M -fprintf /root/big.txt %-10s %p\n \)
+    找到设置了SUID的文件及大文件并将文件名输出到单独的文件里面.
+
+    find $HOME -mtime 0
+    找到家目录中不超过24小时内修改过的文件.
+
+    find /sbin /usr/sbin -executable \! -readable -print
+
+    find . -perm 664
+
+    find . -perm -664
+
+    find . -perm /222
+
+    find . -perm /220
+    find . -perm /u=w,g=w
+    find . -perm /u+w,g+w
+
+    find . -perm -444 -perm /222 ! -perm /111
+    find . -perm -a+r -perm /a+w ! -perm /a+x
+
+    find . -path ./src/emacs -prune -o -print
+    搜索时跳过目录./src/emacs.
+
+    cd /source-dir
+    find . -name .snapshot -prune -o \( \! -name *~ -print0 \)|
+    cpio -pmd0 /dest-dir
+    复制目录,跳过名为.snapshot的文件及临时文件.
+
+    find repo/ -exec test -d {}/.svn -o -d {}/.git -o -d {}/CVS ; \
+    -print -prune
+    找到版本管理目录,但不对这些目录再进行搜索.

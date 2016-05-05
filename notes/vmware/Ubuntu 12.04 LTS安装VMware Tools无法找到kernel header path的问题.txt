@@ -1,0 +1,38 @@
+Ubuntu 12.04 安装 VMware Tools，运行vmware-config-tools.pl 时，总是提示
+The path "" is not valid.
+ What is the location of the directory of C header files that match your running
+ kernel?
+
+输入 /usr/src/linux-headers-3.8.0-29-generic/include 
+
+
+或 /lib/modules/3.8.0-26-generic/build/include 都提示“The path ...  is not valid.”。
+ 
+用了半天时间才找到解决方案 555....分享一下。
+ 
+1. 更新或安装linux headers
+
+sudo apt-get update 
+
+
+sudo apt-get install build-essential 
+
+
+sudo apt-get install linux-headers-$(uname -r)
+ 
+
+2. 关联文件，就是因为找不到这个几个文件，vmware tools才认为路径无效的。
+
+cd /lib/modules/$(uname -r)/build/include/linux
+
+sudo ln -s ../generated/utsrelease.h
+sudo ln -s ../generated/autoconf.h
+
+sudo ln -s ../generated/uapi/linux/version.h
+
+就是因为没有最后这个链接，一直失败，郁闷啊。
+
+ 
+
+3. 再次执行安装就ok啦，运行vmware-config-tools.pl 也没问题了。
+sudo ./vmware-install.pl 

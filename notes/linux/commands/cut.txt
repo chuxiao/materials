@@ -1,0 +1,16 @@
+语法:
+    cut -c list [filename]
+    cut -f list [-d delim] [filename]
+
+用途:
+    从输入中截取一个或多个字符或者字符.
+
+主要选项:
+    -c list
+        截取字符.list为字符编号或一段范围列表,如1,3,5-12,15-.
+
+    -d delim
+        指定字段分隔符,默认为制表符(TAB).
+
+    -f list
+        截取字段.list为字段编号或字段范围列表.

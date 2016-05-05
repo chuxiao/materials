@@ -1,0 +1,70 @@
+1. 创建screen会话
+    screen
+        这种方式将创建一个执行shell的全屏会话,在该会话键入exit退出.
+
+    screen vi test.c
+        创建screen会话并打开vi编辑,退出vi将退出screen会话.
+
+    在当前screen会话中键入CTRL-A C,screen新建一个会话并切换到该会话.
+
+2. 中断screen会话
+    CTRL-A D
+
+3. 列出所有会话
+    screen -ls
+
+4. 重新连接screen会话
+    screen -r session_id
+
+screen常用选项
+    -A
+        将所有会话调整为当前终端机的大小
+    -d session_name
+        不开启新的会话,而是中断现有的会话
+    -r
+        重连一个会话
+    -S session_name
+        为会话指定一个名字
+    -v
+        显示版本信息
+    -ls
+        列出现有会话
+    -wipe
+        同ls,但删除那些无法连接的会话
+    -x session_name
+        绑定一个会话
+
+screen常用快捷键
+    CTRL-A ?         显示所有快捷键
+    CTRL-A CTRL-A    切换到之前显示的会话
+    CTRL-A W         显示所有会话列表
+    CTRL-A C         创建一个新的会话并切换到这个会话
+    CTRL-A N         切换到下一个会话
+    CTRL-A P         切换到上一个会话
+    CTRL-A n         切换到会话n
+    CTRL-A D         中断当前会话
+    CTRL-A K         杀死当前会话
+    CTRL-A [         进入copy模式,ESC退出该模式
+    CTRL-A ]         粘贴,把刚才在copy模式选定的内容贴上
+
+同一Linux账户共享会话
+    A用户:
+        screen -d -m -S test
+        screen -x test
+    B用户:
+        screen -x test
+
+不同Linux账户共享会话
+    A用户:
+        screen -r shared
+        CTRL-A :multiuser on
+        CTRL-A :acladd userB
+    B用户:
+        screen -x userA/shared
+
+    不同账户共享screen需要screen有SUID权限,userA可做如下操作:
+        su -
+        chmod u+s $(which screen)
+        chmod 755 /var/run/screen
+        rm -rf /var/run/screen/*
+        exit

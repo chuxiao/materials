@@ -1,0 +1,9 @@
+语法：
+    watch [options] command
+
+用途：
+    周期性的执行程序并输出结果
+
+主要选项：
+    -n seconds
+        执行间隔秒数

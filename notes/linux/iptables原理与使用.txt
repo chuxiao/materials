@@ -1,0 +1,280 @@
+1. iptables防火墙原理
+
+    iptables防火墙利用的是数据包过滤机制.它通过分析数据包的表头数据,根据包头数据与定义的规则来决定数据包是否可进入主机.
+
+    iptables将数据的处理分为五个阶段:
+        PREROUTING     路由前
+        INPUT          进入
+        FORWARD        转发
+        OUTPUT         发出
+        POSTROUTING    路由后
+
+    iptables包含4张表,每张表包括若干条链,每条链又由若干条规则组成(与特殊标记有关的表MANGLE及与自定义规则有关的表ROW因为很少用,暂忽略):
+        Filter表   与本机有关         NAT表   与地址转换有关
+            INPUT链                       PREROUTING链
+                规则列表                      规则列表
+                默认策略                      默认策略
+            OUTPUT链                      OUTPUT链
+                规则列表                      规则列表
+                默认策略                      默认策略
+            FORWARD链                     POSTROUTING链
+                规则列表                      规则列表
+                默认策略                      默认策略
+
+    iptables在每个数据处理阶段将数据包的包头数据与表中相关链的规则进行比对,数据包表头数据与链的比对顺序是预设的.比对从第一条链的第一条规则开始,若数据包包头数据与规则条件相同则进行对应的操作,否则就继续下一条规则的比对,如果在该链中找不到一条规则与之匹配,就执行该链的预设策略.比对完这条链后,如果还有其他链,就换预定的顺序继续比对下一条链中的规则.iptables预定的链的比对顺序如下:
+
+    数据包进入-------> NAT PREROUTING------->数据包是否需要转发-----------否----------->Filter INPUT
+                                                     |                                       |
+                                                     |                                       |
+                                               Filter FORWARD                             本机处理
+                                                     |                                       |
+                                                     |                                       |
+                       数据包流出<----------NAT POSTROUTING<-------Filter OUTPUT<-------NAT OUTPUT
+
+    iptables规则定义的顺序非常重要,如果顺序定义有误,则可能起不到预定的效果.
+
+2. iptables使用语法
+
+    规则查看
+        iptables [-t table] [-L] [-nv]
+            -t
+                后接对应的表名,如filter,nat,若省略此参数,则默认为filter
+            -L
+                列出当前表中的规则
+            -n
+                不进行IP与主机名的反查
+            -v
+                列出更多信息,如统计数据等
+
+
+            查看Filter表中的规则
+                iptables -L -n
+            查看NAT表中的规则
+                iptables -t nat -L
+
+    规则清除
+        iptables [-t table] [-FXZ]
+            -F
+                清除所有的已定义规则
+            -X
+                清除所有用户"自定义"的链
+            -Z
+                将所有链的计数与流量统计都归零
+
+    定义默认策略
+        iptables [-t table] -P [INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING] [ACCEPT|DROP]
+            -P
+                定义策略
+
+            将本机的INPUT设置为DROP,其他设置为ACCEPT
+                iptables -P INPUT DROP
+                iptables -P OUTPUT ACCEPT
+                iptables -P FORWARD ACCEPT
+
+    规则:IP/Netmask/网卡接口
+        iptables [-ARI 链] [-io 网卡接口] [-p 协议] [-s 来源IP/网段] [-d 目标IP/网段] -j [ACCEPT|DROP]
+            -A
+                追加一条规则,新规则放到规则列表的尾端
+            -I [n]
+                插入一条规则到指定规则的前端,默认插入到第一条规则前面
+            -R n
+                修改或替换第n条规则
+            -i
+                数据包所进入的那个网络接口,如eth0,lo,需与INPUT链配合
+            -o
+                数据包传出的那个网络接口,需与OUTPUT配合
+            -p
+                协议,设置此规则适用于哪种数据包格式,主要的数据包格式有:tcp/udp/icmp/all
+            -s
+                来源IP或网段,如192.168.1.100  192.168.1.0/24 192.168.1.0/255.255.255.0,若规则为"不许"时,加上"!"即可,如:-s !192.168.100.0/24表示不接受来自这个网段发来的包
+            -d
+                目标IP或网段
+            -j
+                操作,有:ACCEPT/DROP/LOG,LOG只是把符合条件的数据包的相关信息记录到/var/log/messages.
+
+            接受所有来自lo这个接口的数据包
+                iptables -A INPUT -i lo -j ACCEPT
+            来自192.168.0.1这个IP的数据包都予以接受
+                iptables -A INPUT -i eth0 -s 192.168.0.1 -j ACCEPT
+            来自192.168.1.0/24的包都接受,但丢弃192.168.1.10的包
+                iptables -A INPUT -i eth0 -s 192.168.1.10 -j DROP
+                iptables -A INPUT -i eth0 -s 192.168.1.0/24 -j ACCEPT
+
+    规则:TCP/UDP
+        iptables [-AIR 链] [-io 网卡接口] [-p tcp|udp] [-s 来源IP/网段] [--sport 端口范围] [-d 目的IP/网段] [--dport 端口范围] -j [ACCEPT|DROP]
+            --sport
+                来源端口或端口范围,如:--sport 21  --sport 1024:65535
+            --dport
+                目标端口或端口范围
+
+            进入本机port 21的数据包全部丢弃
+                iptables -A INPUT -i eth0 -p tcp --dport 21 -j DROP
+            连接本机以下端口(udp:137,138 tcp:139,445)的请求都放行
+                iptables -A INPUT -i eth0 -p udp --dport 137:138 -j ACCEPT
+                iptables -A INPUT -i eth0 -p tcp --dport 139 -j ACCEPT
+                iptables -A INPUT -i eth0 -p tcp --dport 455 -j ACCEPT
+            来自192.168.1.0/24的1024:65535端口的数据包,想要联机到本机的ssh port,予以阻止
+                iptables -A INPUT -i eth0 -s 192.168.1.0/24 -p tcp --sport 1024:65535 --dport ssh -j DROP
+            来自任何地方的port 1:1023的主动联机到本地端口的1:1023联机丢弃
+                iptables -A INPUT -i eth0 -p tcp --sport 1:1023 --dport 1:1023 --syn -j DROP
+
+    规则:状态模块,MAC与RELATED
+        iptables -A INPUT -m state --state 状态
+            -m
+                iptables模块,常见的有state:状态模块 mac MAC模块
+            --state
+                数据包状态
+                    INVALID:无效的数据包
+                    ESTABLISHED:已经联机成功的联机状态
+                    NEW:想要新建立联机的数据包状态
+                    RELATED:P 这个最常用,表示数据包与我们主机发送出去的数据包有关
+
+            只要联机成功的数据包或与我们发出去的数据包有关的数据包就通过,不合法的就丢弃
+                iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+                iptables -A INPUT -m state --state INVALID -j DROP
+            针对局域网MAC地址为aa:bb:cc:dd:ee:ff开放其联机
+                iptables -A INPUT -m mac --mac-source aa:bb:cc:dd:ee:ff -j ACCEPT
+
+    规则:ICMP
+        iptables -A INPUT -p icmp --icmp-type 类型 -j [ACCEPT|DROP]
+
+        让 0,3,4,11,12,14,16,18 的 ICMP type 可以进入本机,去掉8,表示不接受ping请求,让外界主机不知道我们的存在(用一个脚本实现)
+            icmp_type="0 3 4 11 12 14 16 18"
+            for typeicmp in $icmp_type
+            do
+               iptables -A INPUT -i eth0 -p icmp --icmp-type $typeicmp -j ACCEPT
+            done
+
+    规则:SNAT,共享IP功能
+        $INIF表示内网网卡接口,$EXTIF表示外网网卡接口,$innet表示内部主机IP
+        iptables -A INPUT -i $INIF -j ACCEPT           // 来自内部网络的包全部接受
+        iptables -t nat -A POSTROUTING -s $innet -o $EXTIF -j MASQUERADE
+
+    规则:DNAT,内部服务器
+        iptables -t nat -A PREROUTING -tcp -i eth1 --dport 80 -j DNAT --to 192.168.1.210:80
+
+    规则:本地端口转发
+        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
+
+    规则的保存与恢复
+        iptables-save > filename
+        iptables-restore < filename
+            如果将文件保存为/etc/sysconfig/iptables,则iptables启动时会自动加载里面的规则
+
+3. iptables设置脚本
+
+
+    // iptables.rule
+    # 请先输入您的相关参数，不要输入错误了！
+    EXTIF="eth0"             # 这个是可以连上 Public IP 的网络接口
+    INIF="eth1"              # 内部 LAN 的连接接口；若无则写成 INIF=""
+    INNET="192.168.100.0/24" # 若无内部网域接口，请填写成 INNET=""
+    export EXTIF INIF INNET
+
+    # 第一部份，针对本机的防火墙设定！##########################################
+    # 1. 先设定好核心的网络功能：
+    echo "1" > /proc/sys/net/ipv4/tcp_syncookies
+    echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+    for i in /proc/sys/net/ipv4/conf/*/{rp_filter,log_martians}; do
+        echo "1" > $i
+    done
+    for i in /proc/sys/net/ipv4/conf/*/{accept_source_route,accept_redirects,\
+    send_redirects}; do
+        echo "0" > $i
+    done
+
+    # 2. 清除规则、设定默认政策及开放 lo 与相关的设定值
+    PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin; export PATH
+    iptables -F
+    iptables -X
+    iptables -Z
+    iptables -P INPUT   DROP
+    iptables -P OUTPUT  ACCEPT
+    iptables -P FORWARD ACCEPT
+    iptables -A INPUT -i lo -j ACCEPT
+    iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+    # 3. 启动额外的防火墙 script 模块
+    if [ -f /usr/local/virus/iptables/iptables.deny ]; then
+        sh /usr/local/virus/iptables/iptables.deny
+    fi
+    if [ -f /usr/local/virus/iptables/iptables.allow ]; then
+        sh /usr/local/virus/iptables/iptables.allow
+    fi
+    if [ -f /usr/local/virus/httpd-err/iptables.http ]; then
+        sh /usr/local/virus/httpd-err/iptables.http
+    fi
+
+    # 4. 允许某些类型的 ICMP 封包进入
+    AICMP="0 3 3/4 4 11 12 14 16 18"
+    for tyicmp in $AICMP
+    do
+        iptables -A INPUT -i $EXTIF -p icmp --icmp-type $tyicmp -j ACCEPT
+    done
+
+    # 5. 允许某些服务的进入，请依照你自己的环境开启
+    # iptables -A INPUT -p TCP -i $EXTIF --dport  21 --sport 1024:65534 -j ACCEPT # FTP
+    # iptables -A INPUT -p TCP -i $EXTIF --dport  22 --sport 1024:65534 -j ACCEPT # SSH
+    # iptables -A INPUT -p TCP -i $EXTIF --dport  25 --sport 1024:65534 -j ACCEPT # SMTP
+    # iptables -A INPUT -p UDP -i $EXTIF --dport  53 --sport 1024:65534 -j ACCEPT # DNS
+    # iptables -A INPUT -p TCP -i $EXTIF --dport  53 --sport 1024:65534 -j ACCEPT # DNS
+    # iptables -A INPUT -p TCP -i $EXTIF --dport  80 --sport 1024:65534 -j ACCEPT # WWW
+    # iptables -A INPUT -p TCP -i $EXTIF --dport 110 --sport 1024:65534 -j ACCEPT # POP3
+    # iptables -A INPUT -p TCP -i $EXTIF --dport 443 --sport 1024:65534 -j ACCEPT # HTTPS
+
+
+    # 第二部份，针对后端主机的防火墙设定！###############################
+    # 1. 先加载一些有用的模块
+    modules="ip_tables iptable_nat ip_nat_ftp ip_nat_irc ip_conntrack 
+    ip_conntrack_ftp ip_conntrack_irc"
+    for mod in $modules
+    do
+        testmod=`lsmod | grep "^${mod} " | awk '{print $1}'`
+        if [ "$testmod" == "" ]; then
+            modprobe $mod
+        fi
+    done
+
+    # 2. 清除 NAT table 的规则吧！
+    iptables -F -t nat
+    iptables -X -t nat
+    iptables -Z -t nat
+    iptables -t nat -P PREROUTING  ACCEPT
+    iptables -t nat -P POSTROUTING ACCEPT
+    iptables -t nat -P OUTPUT      ACCEPT
+
+    # 3. 若有内部接口的存在 (双网卡) 开放成为路由器，且为 IP 分享器！
+    if [ "$INIF" != "" ]; then
+        iptables -A INPUT -i $INIF -j ACCEPT
+        echo "1" > /proc/sys/net/ipv4/ip_forward
+        if [ "$INNET" != "" ]; then
+            for innet in $INNET
+            do
+                iptables -t nat -A POSTROUTING -s $innet -o $EXTIF -j MASQUERADE
+            done
+        fi
+    fi
+    # 如果你的 MSN 一直无法联机，或者是某些网站 OK 某些网站不 OK，
+    # 可能是 MTU 的问题，那你可以将底下这一行给他取消批注来启动 MTU 限制范围
+    # iptables -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss \
+    #          --mss 1400:1536 -j TCPMSS --clamp-mss-to-pmtu
+
+    # 4. NAT 服务器后端的 LAN 内对外之服务器设定
+    # iptables -t nat -A PREROUTING -p tcp -i $EXTIF --dport 80 \
+    #          -j DNAT --to-destination 192.168.1.210:80 # WWW
+
+    # 5. 特殊的功能，包括 Windows 远程桌面所产生的规则，假设桌面主机为 1.2.3.4
+    # iptables -t nat -A PREROUTING -p tcp -s 1.2.3.4  --dport 6000 \
+    #          -j DNAT --to-destination 192.168.100.10
+    # iptables -t nat -A PREROUTING -p tcp -s 1.2.3.4  --sport 3389 \
+    #          -j DNAT --to-destination 192.168.100.20
+
+    //iptables.allow
+    #!/bin/bash
+    # 底下则填写你允许进入本机的其他网域或主机啊！
+    iptables -A INPUT -i $EXTIF -s 140.116.44.0/24 -j ACCEPT
+
+    //iptables.deny
+    #!/bin/bash
+    # 底下填写的是『你要抵挡的那个咚咚！』
+    iptables -A INPUT -i $EXTIF -s 140.116.44.254 -j DROP

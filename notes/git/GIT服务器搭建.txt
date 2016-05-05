@@ -1,0 +1,59 @@
+                                    GIT服务器搭建
+
+GIT服务器搭建一般采用SSH协议，利用Gitosis进行权限管理。
+
+安装Gitosis
+    # apt-get install python-setuptools
+    # git clone git://eagain.net/gitosis.git
+    # cd gitosis
+    # sudo python setup.py install
+
+创建git管理用户
+    # groupadd git
+    # useradd -r -g git -s /bin/bash -d /srv/git git
+    # mkdir -p /srv/git
+    # chown -R git:git /srv/git
+
+初始化Gitosis
+    # sudo -H -u git gitosis-init < ~/.ssh/id_dsa.pub
+    # sudo chmod 755 /opt/git/gitosis-admin.git/hooks/post-update
+
+克隆 Gitosis 的控制仓库
+    $ git clone git@gitserver:gitosis-admin.git
+    $ git clone ssh://git@113.31.22.162:10002/gitosis-admin.git
+
+gitosis-admin目录结构及作用
+
+    ./gitosis.conf       // 用来设置用户、仓库和权限的控制文件
+    ./keydir             // 保存所有具有访问权限用户公钥的地方— 每人一个
+
+新组权限及新项目
+    [group mobile]
+    members = scott josie jessica
+    writable = iphone_project
+
+    [group mobile_ro]
+    members = john
+    readonly = iphone_project
+
+    gitosis会自动创建新项目及设置各个相关人员的权限。每个人的公钥应该放入keydir，命名方式为members里的名字.pub。
+
+导入新项目
+    $ mkdir rice
+    $ cd rice
+    $ git init
+    $ git remote add origin ssh://git@113.31.22.162:10002/rice.git
+    $ git push origin master
+
+定义组及使用组
+    [group mobile_committers]
+    members = scott josie jessica
+
+    [group mobile]
+    members   = @mobile_committers
+    writable  = iphone_project
+
+    [group mobile_2]
+    members   = @mobile_committers john              // 指定某个组为成员之一（在组名前加上 @ 前缀），自动继承该组的成员
+    writable  = another_iphone_project
+

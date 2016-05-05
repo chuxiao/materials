@@ -1,0 +1,249 @@
+1. 网络设置文件
+    /etc/sysconfig/network
+        设置主机名称及是否启动网络.
+        NETWORKING=yes
+        HOSTNAME=yn79
+
+    /etc/sysconfig/network-scripts/ifcfg-*
+        设置网上参数.
+        DEVICE=eth0                                      // 网卡代号,与ifcfg-eth0对应
+        HWADDR=00:25:90:D4:A2:88                         // MAC 地址
+        TYPE=Ethernet                                    // 接入方式,这里是以太网
+        UUID=1d3a354d-051f-4f17-84a1-50d5dde782d2
+        ONBOOT=yes                                       // 是否开机启动
+        NM_CONTROLLED=yes
+        BOOTPROTO=static                                 // 地址获取方式,分dhcp及static
+        IPADDR=123.30.146.80                             // IP 地址
+        NETMASK=255.255.255.128                          // NET MASK
+        GATEWAY=123.30.146.1                             // 默认路由,多个ifcfg-*文件只需设置一次即可
+        DNS1=8.8.8.8
+        DNS2=8.8.4.4
+
+    /etc/resolv.conf
+        设置DNS服务器IP.
+        nameserver 8.8.8.8
+        nameserver 8.8.4.4
+
+    /etc/hosts
+        定义IP与主机名称或者别名的映射.
+        127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+        ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+2. 网络设置命令
+    /etc/init.d/network restart
+        重启网络.它会重新读取所有网络设置文件中的值来覆盖当前值.
+
+    ifconfig
+        ifconfig [interface] [up|down]
+        ifconfig interface [options]
+
+        查看与临时设置网络接口
+
+        列出所有已经启动的网卡的网络接口信息
+            ifconfig
+        列出eth0的接口信息,而不管其是否启动
+            ifconfig eth0
+        修改网络接口信息
+            ifconfig eth0 192.168.100.100 netmask 255.255.255.128 mtu 8000
+        在eth0上再虚拟一个网络接口
+            ifconfig eth0:0 192.168.50.50
+        关掉eth0这个接口
+            ifconfig eth0 down
+
+        使用ifconfig只能临时设置网卡的功能,网卡重启后设置信息丢失.
+
+    ifup ifdown
+        ifup interface
+        ifdown interface
+
+        当修改/etc/sysconfig/network-scripts/ifcfg-*后,用这两个命令启动和停止网卡接口.但如果用ifconfig修改了接口参数后,使用ifdown则无法停止网卡接口.必须使用ifconfig * down来停止.
+
+    route
+        route [-nee]
+        route add [-net|-host] [网段或主机] netmask [mask] gw|dev xxx
+        route del [-net|-host] [网段或主机] netmask [mask] gw|dev xxx
+
+        查看与修改路由信息.
+
+        -n
+            不使用通信协议与主机名称,直接使用IP或Protocal Number.
+        -ee
+            使用更详细的信息来显示.
+        -net
+            表示后面接的路由为一个网段.
+        -host
+            表示后面接的为连接到单台主机的路由.
+        netmask
+            子网掩码.
+        gw
+            路由IP.
+        dev
+            网卡接口,例eth0.
+
+        查看路由状态
+            route -n
+        路由的增加与删除
+            route del -net 169.254.0.0 netmask 255.255.0.0 dev eth0
+        增加默认路由
+            route add defalt gw 192.168.10.30
+
+    ip
+        ip [options] [操作] [命令]
+
+        ip [-s] link show
+        ip link set [device] [操作与参数]
+
+            show 仅显示与这个网卡相关的内容,如果加s参数会显示更多统计数据
+            set 设置网卡接口参数,device指eth0,eth1等网卡代号
+            操作与参数
+                up | down 启动或停止某个接口
+                address 更改接口MAC地址
+                name 给予接口一个特殊的名字
+                mtu 最大传输单元
+
+            显示所有的接口信息
+                ip link show
+                ip -s link show eth0
+            启动,关闭网卡接口
+                ip link set eth0 down
+                ip link set eth0 up
+            设置MTU
+                ip link set eth0 mtu 8000
+            修改网卡代号名称,需要先停止网卡,同时记得修改ifcfg-*里的设备名称
+                ip link set eth0 down
+                ip link set eth0 test
+            修改网卡MAC地址
+                ip link set eth0 address aa:aa:aa:aa:aa:aa
+
+        ip address show
+        ip address [add|del] [IP参数] [device] [相关参数]
+
+            show 显示网卡接口的IP信息
+            add | del 进行相关参数的增删设置
+                ip参数 网段设置
+                device 要进行设置的网卡接口
+            相关参数
+                broadcast 广播地址,如果值为+表示让系统自己计算
+                label 设置网卡别名
+                scope 网卡接口的范围
+                    global 允许所有来源的联机
+                    link 仅允许本设备的自我联机
+                    host 仅允许本主机内部的联机
+                    默认为global
+
+            显示所有网卡的IP信息
+                ip address show
+            在eth0上虚拟一个新接口
+                ip address add 192.168.50.50/24 broadcast + dev eth0 label eth0:vbird
+            将上面虚拟的接口删除
+                ip address del 192.168.50.50/24 dev eth0
+
+        ip route show
+        ip route [add|del] [IP或网段] via gateway] [dev device]
+
+            show 显示路由信息
+            add | del 增加删除路由信息
+                via 从哪个gateway出去,不一定需要
+
+            显示路由信息
+                ip route show
+            增加路由
+                ip route add 192.168.5.0/24 dev eth0
+                ip route add 192.168.10.0/24 via 192.168.5.100 dev eth0
+                ip route add default via 192.168.1.2 dev eth0
+            删除路由
+                ip route del 192.168.10.0/24
+
+3. 网络排错命令
+    ping
+        ping [-bcsM] IP
+            用于确定两台主机之间是否连通
+
+            -b
+                后面接的是需要广播的IP,用在你"需要对整个网段的主机进行ping"时
+            -c n
+                ping的执行次数
+            -s
+                发出的ICMP数据包的大小,实际大小还需要加上8个字节的ICMP报头
+            -M [do|dont]
+                是否分片,用于确定网络MTU的大小,do 不分片,dont 分片
+
+            确定主机是否连通
+                ping -c 3 192.168.1.5
+            确定MTU的大小
+                ping -c 2 -s 1000 -M do 192.168.1.10
+                ping -c 2 -s 8000 -M do 192.168.1.10
+
+    traceroute
+        traceroute IP
+            用于确定两台主机之间通过的各个节点的通信状况
+
+    netstat
+        netstat [-rnatulpc]
+            打印网络连接,路由表,接口统计等信息
+
+            -r
+                列出路由表信息,同route
+            -n
+                不使用主机名称与服务名称,使用IP和PORT
+            -a
+                列出所有的联机状态,包括tcp/udp/unix socket等
+            -t
+                仅列出tcp数据包的联机
+            -u
+                仅列出udp数据包的联机
+            -l
+                仅列出处于listen状态的连接
+            -p
+                列出PID及程序名
+            -c n
+                几秒钟更新一次
+
+    host
+        host hostname [dns server]
+            查询主机名字对应的IP,使用/etc/resolv.conf里的dns或命令指定的dns server
+
+    nslookup
+        nslookup [hostname | ip]
+            查询IP与主机名称之间的对应关系,使用/etc/resolv.conf里的dns
+
+    telnet
+        telnet [host | ip] port
+            确定主机上的某项服务是否开启或是否能正常通信及以明文方式向主机发送数据
+    wget
+        将URL下载后保存为a.txt,支持断点续传
+            wget -c URL -O a.txt
+
+    tcpdump
+        tcpdump [-nn] [-i 接口] [-w 存储文件] [-A] [-qX] [所欲捕获的数据内容]
+            dump网卡数据
+
+            -nn
+                直接以IP及PORT显示,而非主机名与服务名称
+            -i
+                要监听的网卡接口,例如:eth0,eth1等
+            -A
+                数据包内容以ASCII显示
+            -q
+                仅列出较为简短的数据包信息
+            -X
+                可以列出十六进制以及ASCII的数据包内容
+
+            所欲捕获的数据内容
+                host foo    host 127.0.0.1 针对单台主机进行数据包捕获
+                net 192.168 针对某个网段进行数据包捕获
+                src host 127.0.0.1 and dest net 192.168 针对来源及目的进行捕获
+                port 21 针对端口进行捕获
+
+            打印来自或发往sundown的包
+                tcpdump host sundown
+            打印helios与(hot或ace)之间的数据包
+                tcpdump host helios and \( hot or ace \)
+            打印ace与除helios以外其他主机之间的IP包
+                tcpdump ip host ace and not helios
+            打印通过路由snup的FTP包
+                tcpdump ’gateway snup and (port ftp or ftp-data)’
+            打印来自或发往其他网络的IP包
+                tcpdump ip and not net localnet
+
+

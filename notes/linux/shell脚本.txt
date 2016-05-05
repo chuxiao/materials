@@ -1,0 +1,253 @@
+1. 位于第一行的#!
+
+    第一行的#!指明了可用来执行程序的解释器的完整路径及要传给解释器的参数.例如一个csh脚本名为/usr/ucb/whizprog,它的第一行如下:
+        #! /bin/csh -f
+    另外假设/usr/ucb包含在环境变量PATH中,当用户键入
+        whizprog -q /dev/null
+    内核会解释为:
+        /bin/csh -f /usr/ucb/whizprog -q /dev/null
+
+    #! 行最长不要超过64个字符
+
+    #!/bin/bash -     -表示没有选项
+
+2. 脚本调试
+
+    shell脚本不可以进行实时调试,但我们可以用以下两种办法跟踪执行过程:
+
+        1. 脚本执行时设置跟踪选项：
+            sh -x script.sh
+        2. 脚本内设置
+            ...
+            set -x         // 此行之后打开跟踪功能
+            ...
+            set +x         // 此行之后关闭跟踪功能
+            ...
+
+3. 变量
+
+    变量名字由任意长度的字母,数字或下划线组成,变量名字首字母为字母或者下划线,变量名字的字符长度无限制.
+
+    变量赋值采用以下语法:
+        variable_name=value
+    等号左边为变量名,右边为变量值,等号两边没有任何空格.
+
+    取出变量的值时,需要在变量名称前面加$符号或${varible_name},如
+        foo=$varible_name
+        echo _${varible_name}_
+
+    在给变量进行赋值时,如果所赋的值中间含有空格,请加上引号,如
+        fullname="zengyan yan"
+
+    如果变量没有赋值,则默认为空值,即为null.
+
+4. 环境变量
+
+    导出环境变量
+        export variable[=value]
+
+    打印所有环境变量
+        export -p
+
+    指定环境变量只对当前命令有效,此指定只对当前命令有效,不影响接下来的指令,且不会影响到当前指令的其他环境变量
+        PATH=/bin:/usr/bin awk '...' file1 file2     // 对PATH的赋值只对当前的awk有效,后面的指令的PATH又恢复为原来的值
+
+    env 命令也可临时改变环境变量值,下面这条命令与上面的作用相同
+        env PATH=/bin:/usr/bin awk '...' file1 file2
+    env -i会清除所有环境变量,然后将新设定的值传给当前命令
+        env -i PATH=$PATH HOME=$HOME awk '...' file1 file2            // 此awk命令的环境变量只有在此设定的PATH与HOME,其他环境变量均被清除
+
+    从当前shell中删除变量与函数
+        unset [-v] varible_name        // 删除变量,-v选项可以省略
+        unset -f function_name         // 删除函数
+
+5. 只读变量
+
+    定义只读变量,只读变量不允许再进行赋值
+        readonly variable[=value]
+
+    打印所有只读变量
+        readonly -p
+
+6. 算术展开
+
+    算术展开的语法为:$((...)),例
+        variable=5
+        other=$((variable+1))
+
+    在关系运算符(<,>,<=,>=,==,!=)产生的结果中,1表示真,0表示假.
+
+7. 参数展开
+
+    ${varname:-word}
+        如果varname存在且不是null,则返回其值,否则返回word.用途:如果变量未定义,则返回其默认值
+
+    ${varname:=word}
+        如果varname存在且不是null,则返回其值,否则,设置它为word,并返回其值.用途:如果变量未定义,则设置变量的默认值
+
+    ${varname:?message}
+        如果varname存在且不是null,则返回其值,否则,显示varname:message,并退出当前的命令或脚本.省略message会出现默认信息parameter null or not set.用途:为了捕捉变量未定义导致的错误
+
+    ${varname:+word}
+        如果varname存在且不是null,则返回word,否则,返回null.用途:为了测试变量的存在
+
+    ${varname#pattern}
+        如果模式匹配于变量值的开头处,则删除匹配的最短部分,并返回剩下的部分
+
+    ${varname##pattern}
+        如果模式匹配于变量值的开头处,则删除匹配的最长部分,并返回剩下的部分
+
+    ${varname%pattern}
+        如果模式匹配于变量值的结尾处,则删除匹配的最短部分,并返回剩下的部分
+
+    ${varname%%pattern}
+        如果模式匹配于变量值的结尾处,则删除匹配的最长部分,并返回剩下的部分
+
+    ${#varname}
+        返回varname值里的字符长度
+
+8. 位置参数
+
+    位置参数指的是脚本的命令行参数或函数的函数参数.通常它们的名称以单个的整数来命名,例如$1,$2,由于历史原因,当这个整数大于9时,应该以花括号括起来,例如${10}.
+
+    $#       传递给脚本或函数的参数总和
+    $*,$@    一次表示传递给脚本或函数的所有参数
+    "$*"     将所有命令行参数视为单个字符串
+    "$@"     将所有命令行参数视为单独的个数,也就是单独的字符串.它会保留内嵌在每个参数里的任意空白
+
+9. 特殊变量
+
+    ?        前一命令的退出状态
+    $        当前进程的进程ID
+    HOME     家目录
+    IFS      字段分隔符,通常设置为空格,制表符以及换行
+    PATH     命令查找路径
+    PPID     父进程ID
+    PWD      当前工作目录
+
+10. 退出状态
+
+    0        成功退出
+    <0       在重定向或单词展开期间失败
+    1-125    不成功退出.特定退出值含义由作者自定义
+    126      命令找到了,但文件无法执行
+    127      命令找不到
+    >128     命令因收到信号而死亡
+
+    脚本的退出状态由exit命令指定,语法为
+        exit [exit-value]
+    默认为0
+
+11. test命令
+
+    test "$str1" = "$str2"     或    [ "$str1" = "$str2" ]
+
+    string                string不是null
+    -b file               file是块设备文件
+    -c file               file是字符设备文件
+    -d file               file是目录
+    -e file               file存在
+    -f file               file是普通文件
+    -g file               file有设置setgid位
+    -h file               file是符号链接文件
+    -L file               file是符号链接文件(同上)
+    -n string             string是非null
+    -p file               file是管道文件
+    -r file               file可读
+    -S file               file是socket文件
+    -t n                  文件描述符n指向一终端
+    -s file               file不是空的
+    -u file               file有设置setuid位
+    -w file               file可写
+    -x file               file可执行或是或被查找的目录
+    -z string             string是null
+    s1 = s2               两个字符串相等
+    s1 != s2              字符串不等
+    n1 -eq n2
+    n1 -ne n2
+    n1 -lt n2
+    n1 -gt n2
+    n1 -le n2
+    n1 -ge n2
+
+    否定条件测试
+        if [ ! -x "$file" ]
+
+    多重条件测试
+        if [ -f "$file" ] && ! [ -w "$file" ]
+
+    为防止变量值为空,请将变量用引号引起来或采用前置x的形式
+        if [ -x "$file" ]
+        if [ "x$answer" = "xyes" ]
+
+12. 控制结构
+
+    if condition1
+    then
+        statements1
+    [ elif condition2
+    then
+        statements2
+    ... ]
+    [ else
+        statementsn ]
+    fi
+
+    =======================================
+
+    case $1 in
+    -f)
+        ...
+        ;;
+    -d)
+        ...
+        ;;
+    *)
+        ;;
+    esac
+
+    =======================================
+
+    for i in *.xml
+    do
+        ...
+    done
+
+    =======================================
+
+    这里省略in列表表示循环会遍历整个命令行参数,类似于for i in "$@"
+
+    for i
+    do
+        ...
+    done
+
+    =======================================
+
+    for (( i=1; i<5;i++))
+    do
+        ...
+    done
+
+    =======================================
+
+    while condition is true
+    do
+        ...
+    done
+
+    =======================================
+
+    until condition is false
+    do
+        ...
+    done
+
+    =======================================
+
+    continue [n]
+    break [n]
+
+13. shift与选项处理
+
+    
